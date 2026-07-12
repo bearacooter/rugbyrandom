@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0c231a">
+<title>Bounce of the Ball — Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch: #0c231a;
+    --pitch-light: #14382a;
+    --chalk: #f2efe6;
+    --teal: #2fbfa3;
+    --gold: #d9c36a;
+    --graphite: #1c1f1e;
+    --ink-dim: rgba(242,239,230,0.55);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    font-family:'Archivo',-apple-system,sans-serif;
+    background:var(--pitch);
+    color:var(--chalk);
+    display:flex; flex-direction:column;
+    background-image:
+      linear-gradient(rgba(242,239,230,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242,239,230,0.045) 1px, transparent 1px);
+    background-size:100% 88px, 88px 100%;
+  }
+
+  header {
+    padding:18px 20px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header h1 {
+    font-family:'Archivo Black',sans-serif;
+    font-size:14px; letter-spacing:0.14em; text-transform:uppercase;
+  }
+  header h1 span { color:var(--teal); }
+  #playersBadge {
+    font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--pitch); background:var(--gold);
+    border:none; border-radius:999px; padding:7px 14px;
+    font-family:'Archivo',sans-serif; cursor:pointer;
+  }
+  #playersBadge:active { transform:scale(0.96); }
+
+  main {
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:0 20px; perspective:900px; min-height:0;
+  }
+
+  #card {
+    width:100%; max-width:430px;
+    background:var(--graphite);
+    border:1px solid rgba(242,239,230,0.14);
+    border-radius:18px;
+    padding:24px 22px 22px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.5);
+    position:relative; transform-style:preserve-3d;
+    max-height:100%; overflow-y:auto;
+  }
+  #card::before {
+    content:""; position:absolute; left:12px; top:22px; bottom:22px; width:0;
+    border-left:2px dashed rgba(242,239,230,0.22);
+  }
+  .chip {
+    display:inline-block; font-size:11px; font-weight:700;
+    letter-spacing:0.16em; text-transform:uppercase;
+    padding:5px 11px; border-radius:999px; border:1px solid currentColor;
+    margin-bottom:12px;
+  }
+  #gName {
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(24px,7vw,32px); line-height:1.05;
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  #gDesc { font-size:15px; line-height:1.55; color:rgba(242,239,230,0.88); margin-bottom:16px; }
+  .meta {
+    display:flex; gap:18px;
+    border-top:1px solid rgba(242,239,230,0.12);
+    padding-top:12px;
+  }
+  .meta div { flex:1; }
+  .meta .label {
+    font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--ink-dim); margin-bottom:3px;
+  }
+  .meta .value { font-size:13.5px; font-weight:700; line-height:1.35; }
+  #cue { margin-top:14px; font-size:13px; font-style:italic; color:var(--teal); }
+  #cue::before { content:"Coach's cue — "; font-weight:700; font-style:normal; }
+
+  @keyframes tumble {
+    0%   { transform:rotateX(0) rotateZ(0) translateY(0); opacity:1; }
+    35%  { transform:rotateX(48deg) rotateZ(-7deg) translateY(-26px); opacity:0.25; }
+    36%  { transform:rotateX(-40deg) rotateZ(6deg) translateY(22px); opacity:0; }
+    70%  { transform:rotateX(-12deg) rotateZ(3deg) translateY(8px); opacity:0.7; }
+    85%  { transform:rotateX(5deg) rotateZ(-1.5deg) translateY(-3px); opacity:1; }
+    100% { transform:rotateX(0) rotateZ(0) translateY(0); opacity:1; }
+  }
+  #card.tumbling { animation:tumble 0.65s cubic-bezier(.3,.7,.3,1); }
+  @media (prefers-reduced-motion: reduce) { #card.tumbling { animation:none; } }
+
+  footer {
+    padding:12px 20px calc(20px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+  }
+  #hint { font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-dim); }
+  .btn {
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:15px;
+    letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--pitch); background:var(--teal);
+    border:none; border-radius:999px; padding:15px 34px;
+    cursor:pointer; width:100%; max-width:430px;
+  }
+  .btn:active { transform:scale(0.97); }
+  .btn:focus-visible { outline:3px solid var(--chalk); outline-offset:3px; }
+  #enableMotion { background:transparent; color:var(--teal); border:1px solid var(--teal); display:none; }
+
+  /* ---- setup overlay ---- */
+  #setup {
+    position:fixed; inset:0; background:var(--pitch);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:26px; padding:24px; z-index:10;
+    background-image:
+      linear-gradient(rgba(242,239,230,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242,239,230,0.045) 1px, transparent 1px);
+    background-size:100% 88px, 88px 100%;
+  }
+  #setup h2 {
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(24px,7vw,32px); text-transform:uppercase;
+    text-align:center; line-height:1.15;
+  }
+  #setup h2 span { color:var(--teal); }
+  #setup p { color:var(--ink-dim); font-size:14px; text-align:center; max-width:300px; }
+  .stepper {
+    display:flex; align-items:center; gap:22px;
+  }
+  .stepper button {
+    width:64px; height:64px; border-radius:50%;
+    font-family:'Archivo Black',sans-serif; font-size:30px;
+    background:var(--pitch-light); color:var(--chalk);
+    border:1px solid rgba(242,239,230,0.2); cursor:pointer;
+  }
+  .stepper button:active { transform:scale(0.94); background:var(--teal); color:var(--pitch); }
+  .stepper button:focus-visible { outline:3px solid var(--teal); outline-offset:3px; }
+  #pCount {
+    font-family:'Archivo Black',sans-serif;
+    font-size:76px; min-width:110px; text-align:center; color:var(--gold);
+    font-variant-numeric:tabular-nums;
+  }
+  #pLabel { font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-dim); text-align:center; margin-top:-18px; }
+  #startBtn { max-width:320px; }
+  .hidden { display:none !important; }
+
+  /* category colors — no orange */
+  .c-handling { color:var(--gold); }
+  .c-kicking  { color:#8fb6e0; }
+  .c-evasion  { color:var(--teal); }
+  .c-contact  { color:#d97b8f; }
+  .c-engine   { color:#b9a7e6; }
+  .c-brain    { color:#9fd98a; }
+</style>
+</head>
+<body>
+
+<!-- setup: prompt for player count -->
+<div id="setup">
+  <h2>Who's on <span>the pitch?</span></h2>
+  <p>Every game scales — solo sessions, pairs, or the whole squad. Change it any time from the badge up top.</p>
+  <div class="stepper">
+    <button id="minus" aria-label="Fewer players">−</button>
+    <div>
+      <div id="pCount">1</div>
+      <div id="pLabel">player</div>
+    </div>
+    <button id="plus" aria-label="More players">+</button>
+  </div>
+  <button class="btn" id="startBtn">Take the field</button>
+</div>
+
+<header>
+  <h1>Bounce <span>of the</span> Ball</h1>
+  <button id="playersBadge">1 player</button>
+</header>
+
+<main>
+  <div id="card">
+    <span class="chip c-evasion" id="gChip">Ready</span>
+    <div id="gName">Shake to Draw</div>
+    <p id="gDesc">Shake the phone and the ball bounces your way — a rugby game sized for exactly who showed up today.</p>
+    <div class="meta">
+      <div><div class="label">Win when</div><div class="value" id="gWin">—</div></div>
+      <div><div class="label">Space</div><div class="value" id="gSpace">—</div></div>
+    </div>
+    <div id="cue" style="display:none"></div>
+  </div>
+</main>
+
+<footer>
+  <div id="hint">Shake your phone · or tap below</div>
+  <button class="btn" id="enableMotion">Enable shake detection</button>
+  <button class="btn" id="drawBtn">Bounce the ball</button>
+</footer>
+
+<script>
+/*
+ Each game has three instruction variants:
+   solo (1 player), pair (2 players), group (3+ players).
+ Variants are chosen automatically from the player count.
+ {N} in text is replaced with the live player count.
+*/
+const GAMES = [
+
+/* ---------- HANDLING ---------- */
+{c:"Handling", cls:"c-handling", n:"Around the World",
+ solo:{d:"Pass the ball around your waist, head, and each leg without dropping. One full circuit of all four = 1 point. Drop = back to zero.", w:"10 points banked", s:"On the spot"},
+ pair:{d:"Both players run the circuit simultaneously. First to finish each round wins the point; a drop hands the point away.", w:"First to 7 points", s:"On the spot"},
+ group:{d:"Relay it — the ball travels the full circuit on one player, then gets popped to the next in the circle. A drop restarts the whole circle.", w:"3 clean circles in a row", s:"5m circle"},
+ cue:"fingertips, never palms"},
+
+{c:"Handling", cls:"c-handling", n:"Wall Ball Rally",
+ solo:{d:"3m from a wall. Alternate left-hand and right-hand spin passes off the wall, catching clean each time. Count your streak.", w:"Beat your best streak", s:"Any wall"},
+ pair:{d:"Share the wall: alternate throwers, but you catch your partner's rebound. Miscommunication drops count against both of you.", w:"20-catch team streak", s:"Any wall"},
+ group:{d:"Line up. Throw, catch your rebound, pop to the next player, sprint to the back. Continuous flow — a drop costs the group 5 push-ups.", w:"30 catches, no drops", s:"Any wall"},
+ cue:"catch early with spread fingers"},
+
+{c:"Handling", cls:"c-handling", n:"Blind Catch",
+ solo:{d:"Toss the ball high, spin a full 360°, find it, catch it. Clean catch = 1. Catch after a full spin AND a clap = 3.", w:"15 points", s:"3m square"},
+ pair:{d:"Face away from your partner. They call 'ball!' as they lob it over your head — turn, find, catch. Swap every 5 throws.", w:"Best of 20 throws each", s:"5m apart"},
+ group:{d:"Stand in a circle facing outward. The ball-holder calls a name and lobs it into the middle — that player turns, finds, and catches. Instant re-lob.", w:"{N} clean catches in a row (one per player)", s:"6m circle"},
+ cue:"find the ball with your eyes before your hands move"},
+
+{c:"Handling", cls:"c-handling", n:"One-Hand Scoop Race",
+ solo:{d:"Place 5 balls (or one ball, 5 laps) along a 15m line. Sprint the line scooping one-handed at pace. Time yourself; alternate hands each run.", w:"Beat your time twice", s:"15m strip"},
+ pair:{d:"Mirror lines, one racer per line. First to scoop all 5 and cross the line wins. Fumble = replace and re-scoop.", w:"First to 3 race wins", s:"Two 15m strips"},
+ group:{d:"Relay teams. Each runner scoops one ball per leg and hands off. Dropped scoop = that ball goes back.", w:"First team to clear their line", s:"15m per team"},
+ cue:"sweep through the ball, don't stab"},
+
+{c:"Handling", cls:"c-handling", n:"Hot Hands",
+ solo:{d:"Wall pop-passes as fast as possible for 30 seconds from 2m. Every clean catch counts. Three rounds, rest a minute between.", w:"Beat round one's score in round three", s:"Any wall"},
+ pair:{d:"2m apart, machine-gun pop passes for 30 seconds. Count team catches. Then step to 4m and repeat.", w:"40 catches in a round", s:"2–4m gap"},
+ group:{d:"Tight circle, one ball, fastest possible passing — no passing back to who gave it to you. Add a second ball when it gets comfortable.", w:"60 seconds, two balls, no drops", s:"4m circle"},
+ cue:"hands up as a target before the ball leaves"},
+
+{c:"Handling", cls:"c-handling", n:"High Ball Bingo",
+ solo:{d:"Five catch types = one bingo line: standing catch, jumping catch, knee-up catch, over-the-shoulder catch, one-handed trap. Kick or throw it high to yourself.", w:"Two full bingo lines", s:"Open field"},
+ pair:{d:"Partner launches the kicks; you call 'mine!' and complete each catch type. Swap after each bingo line.", w:"First to a full line", s:"20m apart"},
+ group:{d:"One kicker, the rest compete for the same ball — highest point of the jump wins it. Winner becomes kicker. Safe landing or the catch doesn't count.", w:"3 caught bombs each", s:"Open field"},
+ cue:"attack the ball at its highest point"},
+
+/* ---------- KICKING ---------- */
+{c:"Kicking", cls:"c-kicking", n:"Grubber Golf",
+ solo:{d:"Pick a 'hole' (a cone, a shirt, a tree base) 20–40m away. Grubber-kick your way to it; each kick is a stroke. Ball must stop within a step of the target to hole out.", w:"9 holes, lowest total strokes", s:"Open field"},
+ pair:{d:"Match play — same holes, alternate honors. Lowest strokes wins the hole.", w:"Most holes after 9", s:"Open field"},
+ group:{d:"Scramble format: teams of 2–3, everyone kicks, play from the best ball. Loudest arguments about 'within a step' settle it with a playoff hole.", w:"Best team score over 6 holes", s:"Open field"},
+ cue:"strike the top half — end over end sits up nicer"},
+
+{c:"Kicking", cls:"c-kicking", n:"Coffin Corner",
+ solo:{d:"Mark a 5m×5m landing zone 25m away. Punt for the zone — landing inside on the full is 3 points, first bounce inside is 1.", w:"12 points in 10 kicks", s:"30m+"},
+ pair:{d:"Alternate kicks at the same zone; catcher stands wide to shag balls. Defender may attempt a catch inside the zone to steal the points.", w:"First to 15 points", s:"30m+"},
+ group:{d:"Two teams, one zone each at opposite ends. Simultaneous kick battles; retrieve and return each other's balls between rounds.", w:"First team to 21", s:"Full field length"},
+ cue:"drop the ball onto the foot — don't throw it"},
+
+{c:"Kicking", cls:"c-kicking", n:"Drop Goal Ladder",
+ solo:{d:"No posts needed — pick two trees or set cones as uprights. Start 10m out, ladder back 5m after every make. Miss = ladder down 5m.", w:"A make from 30m", s:"Anything post-shaped"},
+ pair:{d:"Same ladder, alternating kicks — but a make on your turn pushes your opponent back 5m too. Pure pressure.", w:"First to make from 30m", s:"Anything post-shaped"},
+ group:{d:"Knockout: everyone kicks from the same rung; miss and you're out when at least one player makes it. Survivors ladder back.", w:"Last kicker standing", s:"Anything post-shaped"},
+ cue:"ball vertical on the drop, strike as it touches grass"},
+
+{c:"Kicking", cls:"c-kicking", n:"Bounce Roulette",
+ solo:{d:"Grubber the ball 10m and call 'left', 'right', or 'up' before it takes its second bounce. Correct call AND clean regather = 2 points; regather alone = 1.", w:"10 points", s:"15m strip"},
+ pair:{d:"You kick, your partner calls and chases. The oval ball is the third player — nobody controls it. Swap roles every 5.", w:"First to 8 points", s:"15m strip"},
+ group:{d:"One kicker, everyone else in a chase line 5m back. First clean regather scores; caller-and-catcher combos score double.", w:"5 regathers each", s:"20m strip"},
+ cue:"soft knees at the pounce — meet the bounce, don't chase it"},
+
+{c:"Kicking", cls:"c-kicking", n:"Punt Tennis",
+ solo:{d:"Kick the ball as high and far as you can, sprint under it, and catch your own kick. A caught kick 'holds serve'. Each catch, aim a little further.", w:"5 held serves in a row", s:"Open field"},
+ pair:{d:"Kick tennis: punt from where you catch it. Drop the catch and your opponent scores. No running with the ball — kick from the mark.", w:"First to 11", s:"40m+ channel"},
+ group:{d:"Team kick tennis over an imaginary halfway 'net'. Any teammate may catch; one bounce allowed. Rotate the kicker every point.", w:"First team to 15", s:"Half field"},
+ cue:"long follow-through — the leg finishes at your chest"},
+
+/* ---------- EVASION & FOOTWORK ---------- */
+{c:"Evasion", cls:"c-evasion", n:"Traffic Lights",
+ solo:{d:"Jog the field. Call your own random lights out loud: 'green' sprint, 'amber' jog, 'red' hit the deck and pop up. Cheating yourself only trains cheating.", w:"5 minutes without a lazy red", s:"Open field"},
+ pair:{d:"Partner calls the lights and adds 'ball' — a pop pass mid-stride you must catch without breaking rhythm.", w:"3 minutes each, no drops", s:"Open field"},
+ group:{d:"One caller, everyone else moving. Last to react to each light does 3 burpees. Rotate callers every minute.", w:"Fewest burpees after {N} rotations", s:"Open field"},
+ cue:"react on the first syllable, not the whole word"},
+
+{c:"Evasion", cls:"c-evasion", n:"Shadow Stepper",
+ solo:{d:"Set two markers 2m apart. For 20 seconds, side-step between them off alternating feet, throwing a full-commitment fake at each plant.", w:"6 rounds, quality over speed", s:"2m gap"},
+ pair:{d:"Mirror game: attacker steps freely inside a 3m channel, defender shadows without crossing. Beat the shadow's shoulders = 1 point. Swap every 30 seconds.", w:"First to 10 clean beats", s:"3m channel"},
+ group:{d:"Gauntlet: defenders spaced every 5m in individual channels, one attacker runs the line trying to step past each. Get touched, join the defence.", w:"Beat the full gauntlet twice", s:"5m × {N} channels"},
+ cue:"sell the fake with your eyes and shoulders, not just feet"},
+
+{c:"Evasion", cls:"c-evasion", n:"Tag the Corner",
+ solo:{d:"Four markers in a 5m square, you in the middle. Self-call a corner, sprint and touch, return to centre backpedalling. Random order, max intent.", w:"12 corners under 60 seconds", s:"5m square"},
+ pair:{d:"Partner calls the corners — and can call the next one while you're still returning. Swap every 12 corners.", w:"Fastest 12-corner time", s:"5m square"},
+ group:{d:"One square per pair, one caller for everyone. Same call, simultaneous races — last back to centre each round collects a point (points are bad).", w:"Fewest points after 10 rounds", s:"5m square each"},
+ cue:"low turn, push off the outside foot"},
+
+{c:"Evasion", cls:"c-evasion", n:"Cone Gauntlet",
+ solo:{d:"Lay 6 markers in a jagged 20m slalom. Ball in two hands, run it at 90% swerving off both feet. Time every run.", w:"3 runs within half a second of each other", s:"20m slalom"},
+ pair:{d:"Head-to-head on mirrored slaloms. Loser resets the cones. Then swap slaloms — every course runs different.", w:"Best of 5 races", s:"Two 20m slaloms"},
+ group:{d:"Pursuit race: staggered starts 3 seconds apart on a loop slalom. Catch the runner ahead and they're out.", w:"Last runner uncaught", s:"25m loop"},
+ cue:"ball in two hands the whole way — always a passing threat"},
+
+/* ---------- CONTACT ---------- */
+{c:"Contact", cls:"c-contact", n:"Deck & Score",
+ solo:{d:"Sprint 10m with the ball, go to ground rugby-safe, long-place the ball over a line, pop up, jog back. Every clean place is a try.", w:"10 tries, perfect placement", s:"12m strip"},
+ pair:{d:"Add a jackal: partner hovers at the line and attacks the ball the moment you hit grass. Place long and fast or lose it.", w:"7 secured placements out of 10", s:"12m strip"},
+ group:{d:"Attack in waves: carrier goes to deck, first support player arrives to guard over the ball, next wave picks and goes. Continuous for 2 minutes.", w:"8 phases without a loose ball", s:"20m box"},
+ cue:"fight to full arm's length — every inch of the place matters"},
+
+{c:"Contact", cls:"c-contact", n:"Ball Wrestle",
+ solo:{d:"Wrap a towel tight around the ball and rip it free with a violent twist — 10 rips each direction. Then hold the ball at arm's length while 'fending' a post or wall for 20 seconds.", w:"3 full rounds", s:"On the spot"},
+ pair:{d:"Both hands on the ball, knees soft: 15 seconds to rip it clear. Winner keeps the ball; loser earns 3 push-ups.", w:"First to 5 rips", s:"2m square"},
+ group:{d:"King of the ball: winner stays on, fresh challenger every round. Two-hand grip start, 15 seconds max per wrestle.", w:"3 straight defences of the crown", s:"3m square"},
+ cue:"twist through the hips, not the arms"},
+
+{c:"Contact", cls:"c-contact", n:"Get-Up Gauntlet",
+ solo:{d:"Lie flat — back, front, or side, your call. Explode to your feet into a strong defensive stance. 10 reps, varying the start every time.", w:"10 get-ups under 45 seconds", s:"2m square"},
+ pair:{d:"Reaction version: eyes closed on the deck, partner claps — get up and two-hand touch them before they retreat 5m.", w:"5 touches out of 10", s:"7m strip"},
+ group:{d:"Everyone down in a line. Caller claps: last player on their feet and square drops out. Repeat until one remains.", w:"Last one standing (fastest, really)", s:"Open strip"},
+ cue:"there's no offside line for effort"},
+
+{c:"Contact", cls:"c-contact", n:"Shoulder Roll Relay",
+ solo:{d:"10m strip: forward roll right shoulder, up, roll left shoulder, up — continuous down and back. Ball tucked the whole way for bonus difficulty.", w:"4 lengths, no ball spills", s:"10m soft grass"},
+ pair:{d:"Synchronised rolls side by side — stay level with your partner. Then race it: rolls only, first to 10m.", w:"Best of 3 races", s:"10m soft grass"},
+ group:{d:"Relay teams: roll 10m, pop pass to the next roller. Any spilled ball sends that leg back to the start.", w:"First team through twice", s:"10m per team"},
+ cue:"chin tucked, round like a wheel"},
+
+/* ---------- ENGINE ---------- */
+{c:"Engine", cls:"c-engine", n:"Try Line Ladder",
+ solo:{d:"Score a 'try' at a 10m line, jog back — that's rung 1. Each rung adds 5m to the sprint. Deck the ball properly every time.", w:"Reach the 40m rung", s:"40m strip"},
+ pair:{d:"Alternate rungs against the clock: your partner rests while you run, so the ladder never stops. As a race: separate ladders, first to 40m.", w:"First to the top rung", s:"40m strip"},
+ group:{d:"Team ladder: the whole squad runs each rung together; the LAST finisher's time is the team's time. Bring everyone with you.", w:"Full ladder, no rung over target pace", s:"40m strip"},
+ cue:"finish every score at full pace — no coasting over the line"},
+
+{c:"Engine", cls:"c-engine", n:"Kick-Chase Chaos",
+ solo:{d:"Punt high and long, chase flat out, and be stationary under the ball (or regather the bounce) before it settles. Walk back is your rest.", w:"8 successful chases", s:"40m+"},
+ pair:{d:"Kicker vs catcher: chase your own kick while your partner defends the landing zone. Contest in the air — safely. Swap every kick.", w:"First to 5 clean takes", s:"40m+"},
+ group:{d:"One kicker, split the rest into chase team and return team. Chase must arrive organised in a line; return team counter-attacks to a 10m line.", w:"Chase team: 5 stops. Return team: 5 breaks.", s:"Half field"},
+ cue:"chase in an arc — take away the easy step inside"},
+
+{c:"Engine", cls:"c-engine", n:"Bronco Bet",
+ solo:{d:"Shuttle 20m, 40m, 60m out-and-back — that's one set. Before each set, bet a time. Beat your bet or the set doesn't count.", w:"3 counted sets", s:"60m"},
+ pair:{d:"Handicap race: faster runner gives the slower a called head start — set the handicap so every finish is a photo finish.", w:"Best of 3, adjusting the handicap", s:"60m"},
+ group:{d:"Pursuit bronco: start spread evenly around a loop version. Catch a body ahead of you, they join the caught. Last uncaught wins.", w:"Survive the full bronco", s:"60m loop"},
+ cue:"turns are free time if you stay low and tight"},
+
+{c:"Engine", cls:"c-engine", n:"Phase Machine",
+ solo:{d:"5 push-ups, sprint 10m with ball, deck and place, 5 squat jumps, sprint back. Each circuit is one 'phase'. Continuous 3 minutes.", w:"8 phases per 3-minute block, 3 blocks", s:"10m strip"},
+ pair:{d:"You run the phase while your partner does slow ball-figure-8s as 'active rest', then swap. The machine never stops.", w:"20 total phases in 6 minutes", s:"10m strip"},
+ group:{d:"Real phases: carrier hits the deck, two support players seal, next carrier picks and goes to the next 10m mark. Rotate roles every phase.", w:"12 continuous phases, no ball on the floor", s:"30m box"},
+ cue:"the rep isn't over until you're back in the line"},
+
+/* ---------- RUGBY BRAIN ---------- */
+{c:"Rugby Brain", cls:"c-brain", n:"Number Call",
+ solo:{d:"Jog with the ball. Every 10 steps, call a random number 1–4 and instantly do it: 1 = step left, 2 = step right, 3 = dummy pass, 4 = chip to self.", w:"5 minutes, zero hesitations", s:"Open field"},
+ pair:{d:"Partner jogs behind you calling the numbers — you can't predict what you can't see coming.", w:"3 minutes each, sharp on every call", s:"Open field"},
+ group:{d:"Attack line jogging forward; the caller behind shouts a number and the WHOLE line executes together. Add 5 = 'miss pass along the line'.", w:"10 straight calls executed in sync", s:"Open field"},
+ cue:"decide before the second syllable lands"},
+
+{c:"Rugby Brain", cls:"c-brain", n:"Scoreboard Pressure",
+ solo:{d:"Invent the scenario out loud: 'down 4, two minutes left, ball on our 22.' Then run a 2-minute continuous sequence — sprints, decks, passes off the wall — as that scenario. Narrate your decisions.", w:"Win 3 imaginary matches", s:"Anywhere"},
+ pair:{d:"One player sets the scenario and plays scrappy defence (two-hand touch); the other must 'score' at a line before the 2-minute clock dies.", w:"2 scores each from losing positions", s:"20m box"},
+ group:{d:"Split into attack and defence with a real scenario and a real 2-minute clock. Touch = tackle, 3-second ruck. Losing team sets the next scenario.", w:"Best of 5 scenarios", s:"30m box"},
+ cue:"pressure is a privilege — slow your breathing, speed your feet"},
+
+{c:"Rugby Brain", cls:"c-brain", n:"Call & Catch",
+ solo:{d:"Toss the ball up and call a body part before catching — you must catch after touching that part (knee, head, hip). Wrong touch or drop resets the streak.", w:"12-catch streak", s:"On the spot"},
+ pair:{d:"Your partner makes the call while the ball is already in the air. Late calls make it evil. That's the point.", w:"Best streak of 20 throws", s:"3m apart"},
+ group:{d:"Circle, one ball. Thrower calls a NAME and a body part mid-flight. Wrong receiver moving, wrong touch, or a drop = 3 push-ups for the guilty.", w:"Two full laps of the circle, clean", s:"5m circle"},
+ cue:"listen with your feet already moving"},
+
+{c:"Rugby Brain", cls:"c-brain", n:"Two-Touch Territory",
+ solo:{d:"Map three zones on your field: 'exit' (kick long), 'build' (grubber and regather), 'strike' (sprint and score). Jog, self-call a zone, execute its skill instantly.", w:"12 executions, right skill every time", s:"Half field"},
+ pair:{d:"Partner calls the zones as you move between them. Wrong skill for the zone = 5 burpees. Swap every 8 calls.", w:"8 straight correct executions", s:"Half field"},
+ group:{d:"Full team moves as an attacking unit; caller shifts the zone every 20 seconds and the whole shape must adapt — kicker deep for exits, runners flat for strike.", w:"5 zone shifts executed as a unit", s:"Half field"},
+ cue:"know where you are on the field before you know what to do"}
+];
+
+/* ---------- state ---------- */
+let players = 1;
+let history = [];
+let count = 0;
+
+const $ = id => document.getElementById(id);
+const card = $('card');
+
+function variantFor(g) {
+  if (players === 1) return g.solo;
+  if (players === 2) return g.pair;
+  return g.group;
+}
+
+function fmt(text) { return text.replace(/\{N\}/g, players); }
+
+function pick() {
+  let pool = GAMES.filter(g => !history.includes(g.n));
+  if (pool.length === 0) { history = []; pool = GAMES; }
+  const g = pool[Math.floor(Math.random() * pool.length)];
+  history.push(g.n);
+  if (history.length > 8) history.shift();
+  return g;
+}
+
+function render(g) {
+  const v = variantFor(g);
+  $('gChip').textContent = g.c + ' · ' + (players === 1 ? 'Solo' : players === 2 ? 'Pairs' : players + ' players');
+  $('gChip').className = 'chip ' + g.cls;
+  $('gName').textContent = g.n;
+  $('gDesc').textContent = fmt(v.d);
+  $('gWin').textContent = fmt(v.w);
+  $('gSpace').textContent = fmt(v.s);
+  $('cue').textContent = g.cue;
+  $('cue').style.display = 'block';
+  count++;
+  card.scrollTop = 0;
+}
+
+let animating = false;
+let current = null;
+function draw() {
+  if (animating) return;
+  animating = true;
+  card.classList.add('tumbling');
+  if (navigator.vibrate) navigator.vibrate(40);
+  setTimeout(() => { current = pick(); render(current); }, 230);
+  setTimeout(() => { card.classList.remove('tumbling'); animating = false; }, 680);
+}
+
+$('drawBtn').addEventListener('click', draw);
+
+/* ---------- player count ---------- */
+function playersLabel() { return players + (players === 1 ? ' player' : ' players'); }
+function refreshPlayers() {
+  $('pCount').textContent = players;
+  $('pLabel').textContent = players === 1 ? 'player' : 'players';
+  $('playersBadge').textContent = playersLabel();
+  // re-render current game so instructions rescale live
+  if (current) render(current), count--;
+}
+$('minus').addEventListener('click', () => { if (players > 1) { players--; refreshPlayers(); } });
+$('plus').addEventListener('click', () => { if (players < 30) { players++; refreshPlayers(); } });
+$('startBtn').addEventListener('click', () => { $('setup').classList.add('hidden'); });
+$('playersBadge').addEventListener('click', () => { $('setup').classList.remove('hidden'); $('startBtn').textContent = 'Back to the game'; });
+
+/* ---------- shake detection ---------- */
+let lastMag = null, lastShake = 0;
+const SHAKE_THRESHOLD = 14, SHAKE_COOLDOWN = 1200;
+
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a) return;
+  const mag = Math.sqrt((a.x||0)**2 + (a.y||0)**2 + (a.z||0)**2);
+  if (lastMag !== null) {
+    const delta = Math.abs(mag - lastMag);
+    const now = Date.now();
+    if (delta > SHAKE_THRESHOLD && now - lastShake > SHAKE_COOLDOWN && $('setup').classList.contains('hidden')) {
+      lastShake = now;
+      draw();
+    }
+  }
+  lastMag = mag;
+}
+
+function startMotion() {
+  window.addEventListener('devicemotion', onMotion);
+  $('enableMotion').style.display = 'none';
+  $('hint').textContent = 'Shake your phone · or tap below';
+}
+
+if (typeof DeviceMotionEvent !== 'undefined' &&
+    typeof DeviceMotionEvent.requestPermission === 'function') {
+  $('enableMotion').style.display = 'block';
+  $('hint').textContent = 'Tap "Enable shake detection" first';
+  $('enableMotion').addEventListener('click', async () => {
+    try {
+      const res = await DeviceMotionEvent.requestPermission();
+      if (res === 'granted') startMotion();
+      else $('hint').textContent = 'Motion blocked — use the button instead';
+    } catch {
+      $('hint').textContent = 'Motion unavailable — use the button instead';
+    }
+  });
+} else if (typeof DeviceMotionEvent !== 'undefined') {
+  startMotion();
+} else {
+  $('hint').textContent = 'No motion sensor — tap the button';
+}
+</script>
+</body>
+</html>
