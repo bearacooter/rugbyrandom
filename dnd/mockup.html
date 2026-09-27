@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DM Table Mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #ece6d8;
+    --surface: #f7f3ea;
+    --ink: #1d1a16;
+    --muted: #6b6255;
+    --line: #d5cbb8;
+    --brass: #a8771c;
+    --brass-soft: #f0e2bf;
+    --moss: #4e7a4a;
+    --blood: #a9312c;
+    --amber: #c98a1c;
+    --tv-bezel: #17181b;
+    --tv-bezel-edge: #2a2c31;
+    --hud-bg: rgba(12, 12, 14, 0.82);
+    --hud-ink: #f1ebdc;
+    --hud-brass: #d9b45a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #17150f;
+      --surface: #221f18;
+      --ink: #ece4d2;
+      --muted: #a89c86;
+      --line: #3a3529;
+      --brass: #d3aa4d;
+      --brass-soft: #3a2f16;
+      --moss: #7fb07a;
+      --blood: #e0574f;
+      --amber: #e2a642;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #17150f;
+    --surface: #221f18;
+    --ink: #ece4d2;
+    --muted: #a89c86;
+    --line: #3a3529;
+    --brass: #d3aa4d;
+    --brass-soft: #3a2f16;
+    --moss: #7fb07a;
+    --blood: #e0574f;
+    --amber: #e2a642;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 28px 48px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+  h1, h2 { font-family: "Cinzel", "Times New Roman", serif; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: 0.02em; }
+  h2 { font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+  .lede { color: var(--muted); max-width: 62ch; margin: 6px 0 0; }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* ---------- TV ---------- */
+  .tv-block { display: grid; gap: 10px; }
+  .tv {
+    background: var(--tv-bezel);
+    border: 10px solid var(--tv-bezel);
+    outline: 1px solid var(--tv-bezel-edge);
+    border-radius: 6px;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  }
+  .tv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #0b0b0d; }
+  .dim { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 400ms; pointer-events: none; }
+  .tv.is-dim .dim { opacity: 0.45; }
+  .blank { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 120ms; pointer-events: none; }
+  .tv.is-blank .blank { opacity: 1; }
+
+  .hud-top {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; gap: 6px; align-items: center;
+    padding: 6px 10px;
+    background: var(--hud-bg);
+    color: var(--hud-ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    border-bottom: 1px solid rgba(217,180,90,0.35);
+    overflow-x: auto;
+  }
+  .hud-top .round {
+    font-family: "Cinzel", serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em;
+    color: var(--hud-brass); padding-right: 10px; margin-right: 4px; border-right: 1px solid rgba(255,255,255,0.15);
+    white-space: nowrap;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 3px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.78rem; font-weight: 500; white-space: nowrap;
+    opacity: 0.75;
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip.active { opacity: 1; background: var(--hud-brass); color: #1a1408; border-color: var(--hud-brass); font-weight: 600; }
+  .chip.hidden-token { display: none; }
+
+  .hud-side {
+    position: absolute; top: 44px; right: 0; bottom: 0;
+    width: 24%; min-width: 150px;
+    padding: 8px;
+    display: flex; flex-direction: column; gap: 6px;
+    background: linear-gradient(to left, var(--hud-bg), rgba(12,12,14,0.55));
+    color: var(--hud-ink);
+  }
+  .hud-side .lbl { font-family: "Cinzel", serif; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--hud-brass); }
+  .cond {
+    display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center;
+    padding: 5px 8px; border-radius: 3px;
+    background: rgba(255,255,255,0.06); border-left: 3px solid var(--c, #888);
+    font-size: 0.72rem;
+  }
+  .cond .who { font-weight: 600; }
+  .cond .what { color: rgba(241,235,220,0.8); grid-column: 1 / -1; }
+  .cond .rounds { font-family: "IBM Plex Mono", monospace; font-size: 0.66rem; color: var(--hud-brass); }
+
+  .reveal {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(0,0,0,0.78); opacity: 0; pointer-events: none;
+    transition: opacity 350ms;
+  }
+  .tv.is-reveal .reveal { opacity: 1; }
+  .card {
+    width: min(56%, 380px); aspect-ratio: 3 / 4; border: 2px solid var(--hud-brass);
+    background: radial-gradient(ellipse at 50% 30%, #3a2a2c 0%, #16110f 70%);
+    display: grid; grid-template-rows: 1fr auto; overflow: hidden;
+  }
+  .card svg { width: 100%; height: 100%; display: block; }
+  .card figcaption {
+    padding: 8px 10px; background: #0f0c0a; color: var(--hud-ink);
+    font-family: "Cinzel", serif; font-size: 0.82rem; letter-spacing: 0.08em; text-align: center;
+  }
+  .card figcaption small { display: block; font-family: "IBM Plex Sans", sans-serif; font-size: 0.68rem; letter-spacing: 0; color: rgba(241,235,220,0.7); text-transform: none; }
+
+  .ppi { position: absolute; left: 10px; bottom: 8px; color: rgba(241,235,220,0.55); font-family: "IBM Plex Mono", monospace; font-size: 0.66rem; }
+  #fx { background: transparent; pointer-events: none; }
+  .tint { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 600ms; mix-blend-mode: multiply; }
+  .tv[data-scene="tavern"] .tint { opacity: 1; background: #f0b86a; }
+  .tv[data-scene="cave"] .tint { opacity: 1; background: #6f86a8; }
+  .tv[data-scene="combat"] .tint { opacity: 0.55; background: #c9503a; }
+  .scene-tag { position: absolute; right: 10px; bottom: 8px; color: var(--hud-brass); font-family: "Cinzel", serif; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .chip .clock { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; padding-left: 4px; border-left: 1px solid rgba(0,0,0,0.25); }
+  .chip .clock.late { color: #7a1d18; }
+  .rules-card {
+    position: absolute; left: 10px; bottom: 34px; width: min(46%, 330px);
+    background: var(--hud-bg); color: var(--hud-ink); border: 1px solid var(--hud-brass);
+    padding: 10px 12px; font-size: 0.78rem; line-height: 1.4;
+    opacity: 0; transform: translateY(6px); transition: opacity 250ms, transform 250ms; pointer-events: none;
+  }
+  .rules-card.show { opacity: 1; transform: none; }
+  .rules-card b { display: block; font-family: "Cinzel", serif; letter-spacing: 0.08em; color: var(--hud-brass); margin-bottom: 4px; }
+  .rules-card .bar { height: 2px; background: var(--hud-brass); margin-top: 8px; transform-origin: left; }
+  .rules-card.show .bar { animation: drain 15s linear forwards; }
+  @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+  .dice {
+    position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) scale(0.6);
+    font-family: "Cinzel", serif; font-weight: 700; font-size: clamp(2.5rem, 9vw, 6rem); color: var(--hud-brass);
+    text-shadow: 0 0 30px rgba(0,0,0,0.9); opacity: 0; transition: opacity 200ms, transform 200ms; pointer-events: none;
+  }
+  .dice.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .dice small { display: block; font-family: "IBM Plex Sans", sans-serif; font-weight: 500; font-size: 0.9rem; letter-spacing: 0.1em; text-align: center; color: var(--hud-ink); }
+  .dice.crit { color: #e8c76a; }
+  .dice.fumble { color: #e0574f; }
+  .timer { font-family: "IBM Plex Mono", monospace; font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .timer small { display: block; font-size: 0.74rem; color: var(--muted); font-family: "IBM Plex Sans", sans-serif; }
+  .timer.nag small { color: var(--blood); }
+  .console.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 720px) { .console.three { grid-template-columns: 1fr; } }
+
+  .tv-caption { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.85rem; }
+
+  /* ---------- Laptop console ---------- */
+  .console {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 0;
+    overflow: hidden;
+  }
+  .console > section { padding: 18px; min-width: 0; }
+  .console > section + section { border-left: 1px solid var(--line); }
+  @media (max-width: 720px) {
+    .console { grid-template-columns: 1fr; }
+    .console > section + section { border-left: 0; border-top: 1px solid var(--line); }
+    .hud-side { display: none; }
+  }
+  .sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  th { text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 0 8px 8px 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
+  td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; font-variant-numeric: tabular-nums; }
+  tr.turn td { background: var(--brass-soft); }
+  tr.turn td:first-child { box-shadow: inset 3px 0 0 var(--brass); }
+  td.num { font-family: "IBM Plex Mono", monospace; }
+  .hpbar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .hpbar i { display: block; height: 100%; background: var(--moss); }
+  .hpbar i.low { background: var(--blood); }
+  .tag { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 0.66rem; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 2px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.secret { color: var(--blood); border-color: var(--blood); }
+  .name { font-weight: 600; }
+  .name small { display: block; font-weight: 400; color: var(--muted); font-size: 0.74rem; }
+
+  .btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+  button {
+    font: inherit; font-size: 0.86rem; font-weight: 500;
+    padding: 10px 12px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    text-align: left; display: grid; gap: 2px;
+  }
+  button kbd { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; color: var(--muted); }
+  button:hover { border-color: var(--brass); }
+  button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  button.primary { background: var(--brass); border-color: var(--brass); color: #1a1408; }
+  button.primary kbd { color: rgba(26,20,8,0.7); }
+  button.danger { border-color: var(--blood); color: var(--blood); }
+  button[aria-pressed="true"] { background: var(--brass-soft); border-color: var(--brass); }
+
+  .log { margin-top: 14px; font-family: "IBM Plex Mono", monospace; font-size: 0.74rem; color: var(--muted); display: grid; gap: 3px; max-height: 120px; overflow: auto; }
+  .log b { color: var(--ink); font-weight: 500; }
+
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .legend div { border-top: 2px solid var(--brass); padding-top: 8px; font-size: 0.86rem; }
+  .legend b { display: block; font-family: "Cinzel", serif; font-size: 0.78rem; letter-spacing: 0.06em; margin-bottom: 2px; }
+  @media (prefers-reduced-motion: reduce) { .dim, .reveal, .blank { transition: none; } }
+</style>
+</head>
+<body style="margin:0">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mockup · ideas 1 to 7 plus bonus extras</div>
+    <h1>DM Table Toolkit</h1>
+    <p class="lede">Top: the old TV as the players see it. Bottom: the DM's laptop window. The buttons work. Everything the players see is a projection of the DM's private state, sent between two browser windows with no server.</p>
+  </header>
+
+  <div class="tv-block">
+    <div class="tv" id="tv">
+      <canvas id="map" width="1280" height="720"></canvas>
+      <canvas id="fx" width="1280" height="720"></canvas>
+      <div class="tint"></div>
+      <div class="dim"></div>
+      <div class="rules-card" id="rulesCard"></div>
+      <div class="dice" id="dice"></div>
+      <div class="scene-tag" id="sceneTag"></div>
+      <div class="hud-top" id="hudTop"></div>
+      <aside class="hud-side">
+        <div class="lbl">Conditions</div>
+        <div id="hudConds"></div>
+      </aside>
+      <div class="ppi">grid 1.00 in · 42.3 px/in · calibrated</div>
+      <div class="reveal">
+        <figure class="card" style="margin:0">
+          <svg viewBox="0 0 120 150" aria-hidden="true">
+            <ellipse cx="60" cy="52" rx="26" ry="32" fill="#c9b79a"/>
+            <path d="M34 60 Q60 20 86 60 L86 30 Q60 4 34 30 Z" fill="#2a1d18"/>
+            <path d="M22 150 L36 96 Q60 88 84 96 L98 150 Z" fill="#4a2c2c"/>
+            <path d="M22 150 L36 96 Q60 108 84 96 L98 150 Z" fill="#2e1a1a"/>
+            <circle cx="49" cy="52" r="3" fill="#2a1d18"/><circle cx="71" cy="52" r="3" fill="#2a1d18"/>
+            <path d="M50 70 Q60 76 70 70" stroke="#5a2a2a" stroke-width="2" fill="none"/>
+            <circle cx="60" cy="112" r="6" fill="#d9b45a"/>
+          </svg>
+          <figcaption>Ser Alaric Vane<small>Knight-Commander of the Ashen Hall</small></figcaption>
+        </figure>
+      </div>
+      <div class="blank"></div>
+    </div>
+    <div class="tv-caption">
+      <span>Player-facing TV, 40 in, lying flat. Minis sit on the glass. Nothing under the strips is map.</span>
+      <span class="eyebrow">Table window</span>
+    </div>
+  </div>
+
+  <div class="console">
+    <section>
+      <div class="sec-head">
+        <h2>Initiative · DM view</h2>
+        <span class="eyebrow">Round <span id="roundNum">3</span></span>
+      </div>
+      <div style="overflow-x:auto">
+      <table id="tracker">
+        <thead><tr><th>Init</th><th>Creature</th><th>HP</th><th>AC</th><th>Note</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Table controls</h2><span class="eyebrow">DM window</span></div>
+      <div class="btns">
+        <button class="primary" id="btnNext">Next turn <kbd>N</kbd></button>
+        <button id="btnDamage">Damage active 7 <kbd>D</kbd></button>
+        <button id="btnCond">Add Frightened <kbd>C</kbd></button>
+        <button id="btnDim" aria-pressed="false">Dim table <kbd>M</kbd></button>
+        <button id="btnReveal" aria-pressed="false">Reveal portrait <kbd>R</kbd></button>
+        <button class="danger" id="btnBlank" aria-pressed="false">Panic blank <kbd>Esc</kbd></button>
+      </div>
+      <p class="lede" style="font-size:0.84rem;margin-top:14px">Hidden creatures never appear on the TV. Hit points and notes never leave this window. The TV only receives name, portrait, turn marker and public conditions.</p>
+    </section>
+  </div>
+
+  <div class="console three">
+    <section>
+      <div class="sec-head"><h2>Scenes &amp; sound</h2><span class="eyebrow">Ideas 5, 3</span></div>
+      <div class="btns">
+        <button data-scene="tavern">Tavern <kbd>warm wash</kbd></button>
+        <button data-scene="cave">Cave <kbd>cold wash</kbd></button>
+        <button data-scene="combat">Combat <kbd>red wash</kbd></button>
+        <button data-scene="">Clear scene <kbd>no tint</kbd></button>
+        <button data-sfx="thud">Door slam <kbd>one-shot</kbd></button>
+        <button data-sfx="sting">Crit stinger <kbd>one-shot</kbd></button>
+      </div>
+      <p class="lede" style="font-size:0.8rem;margin-top:12px">Sounds here are synthesized in the browser so the mockup needs no files. The real tool plays local audio files.</p>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Table extras</h2><span class="eyebrow">Bonus ideas</span></div>
+      <div class="btns">
+        <button data-rule="Frightened">Rules card: Frightened <kbd>15 s on TV</kbd></button>
+        <button data-rule="Grappled">Rules card: Grappled <kbd>15 s on TV</kbd></button>
+        <button id="btnRoll">Public d20 roll <kbd>shown on TV</kbd></button>
+        <button id="btnLight" aria-pressed="false">Light radii <kbd>torch 20/40 ft</kbd></button>
+        <button id="btnClock" aria-pressed="false">Turn shot clock <kbd>60 s, quiet</kbd></button>
+      </div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Session</h2><span class="eyebrow">Idea 6</span></div>
+      <div class="timer" id="timer">00:00<small>since last break</small></div>
+      <div class="btns" style="margin-top:12px">
+        <button id="btnBreak">Take a break <kbd>resets nag</kbd></button>
+      </div>
+      <p class="lede" style="font-size:0.8rem;margin-top:12px">Nag turns red after 75 minutes. Sped up here: 20 seconds, so you can see it happen.</p>
+    </section>
+  </div>
+
+  <div class="legend">
+    <div><b>Idea 1 · HUD</b>Top strip is the initiative rail, right rail is conditions. Both overlay whatever map software is running underneath.</div>
+    <div><b>Idea 2 · Engine</b>One state object, two renderings. The DM table is the truth, the TV gets a filtered copy.</div>
+    <div><b>Idea 3 · Calibration</b>The grid is drawn at a measured pixels-per-inch so a 1 in mini base fits a square. Dim reduces glare under minis.</div>
+    <div><b>Idea 4 · Reveal</b>A portrait or handout fades over the map and pulls back with one key. Panic blank is instant.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const state = {
+    round: 3,
+    turn: 0,
+    order: [
+      { name: 'Brannock', sub: 'Dwarf fighter · player', hp: 38, max: 44, ac: 18, color: '#4e7a4a', note: 'Second wind used' },
+      { name: 'Wren', sub: 'Halfling rogue · player', hp: 21, max: 27, ac: 15, color: '#3f6f9a', note: '' },
+      { name: 'Ash-Wight', sub: 'Undead · monster', hp: 19, max: 45, ac: 14, color: '#8a4a4a', note: 'Bloodied. Flees at 10.' },
+      { name: 'Sister Idony', sub: 'Human cleric · player', hp: 30, max: 30, ac: 17, color: '#a8771c', note: 'Concentrating: Bless' },
+      { name: 'Ambusher', sub: 'Goblin · hidden', hp: 7, max: 7, ac: 15, color: '#666', note: 'In the alcove, DC 14 to spot', hidden: true },
+    ],
+    conds: [
+      { who: 'Ash-Wight', what: 'Blessed target', rounds: 1, c: '#d9b45a' },
+      { who: 'Wren', what: 'Poisoned', rounds: 2, c: '#7fb07a' },
+    ],
+    dim: false, reveal: false, blank: false,
+  };
+
+  const tv = document.getElementById('tv');
+  const hudTop = document.getElementById('hudTop');
+  const hudConds = document.getElementById('hudConds');
+  const tbody = document.querySelector('#tracker tbody');
+  const log = document.getElementById('log');
+  const roundNum = document.getElementById('roundNum');
+
+  function say(msg) {
+    const d = document.createElement('div');
+    d.innerHTML = '<b>bus →</b> ' + msg;
+    log.prepend(d);
+    while (log.children.length > 6) log.lastChild.remove();
+  }
+
+  function renderTable() {
+    tbody.innerHTML = '';
+    state.order.forEach((c, i) => {
+      const tr = document.createElement('tr');
+      if (i === state.turn) tr.className = 'turn';
+      const low = c.hp / c.max < 0.34;
+      tr.innerHTML =
+        '<td class="num">' + (22 - i * 3) + '</td>' +
+        '<td><span class="name">' + c.name + (c.hidden ? ' <span class="tag secret">hidden</span>' : '') + '<small>' + c.sub + '</small></span></td>' +
+        '<td class="num">' + c.hp + ' / ' + c.max + '<div class="hpbar"><i class="' + (low ? 'low' : '') + '" style="width:' + Math.max(0, c.hp / c.max * 100) + '%"></i></div></td>' +
+        '<td class="num">' + c.ac + '</td>' +
+        '<td style="color:var(--muted);font-size:0.8rem">' + c.note + '</td>';
+      tbody.appendChild(tr);
+    });
+    roundNum.textContent = state.round;
+  }
+
+  function renderTV() {
+    hudTop.innerHTML = '<span class="round">Round ' + state.round + '</span>';
+    state.order.forEach((c, i) => {
+      if (c.hidden) return;
+      const s = document.createElement('span');
+      s.className = 'chip' + (i === state.turn ? ' active' : '');
+      s.innerHTML = '<span class="dot" style="background:' + c.color + '"></span>' + c.name;
+      hudTop.appendChild(s);
+    });
+    hudConds.innerHTML = '';
+    state.conds.forEach(k => {
+      const d = document.createElement('div');
+      d.className = 'cond';
+      d.style.setProperty('--c', k.c);
+      d.innerHTML = '<span class="who">' + k.who + '</span><span class="rounds">' + k.rounds + ' rd</span><span class="what">' + k.what + '</span>';
+      hudConds.appendChild(d);
+    });
+    tv.classList.toggle('is-dim', state.dim);
+    tv.classList.toggle('is-reveal', state.reveal);
+    tv.classList.toggle('is-blank', state.blank);
+    document.getElementById('btnDim').setAttribute('aria-pressed', state.dim);
+    document.getElementById('btnReveal').setAttribute('aria-pressed', state.reveal);
+    document.getElementById('btnBlank').setAttribute('aria-pressed', state.blank);
+  }
+
+  // ---- map: stone rooms, calibrated grid, tokens ----
+  function drawMap() {
+    const cv = document.getElementById('map');
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height, g = 42.3;
+    ctx.fillStyle = '#0b0b0d'; ctx.fillRect(0, 0, W, H);
+    const rooms = [[3, 3, 12, 8], [15, 6, 9, 6], [10, 11, 6, 5], [24, 4, 5, 10]];
+    rooms.forEach(([x, y, w, h]) => {
+      const grd = ctx.createLinearGradient(0, y * g, 0, (y + h) * g);
+      grd.addColorStop(0, '#5b5650'); grd.addColorStop(1, '#3f3b37');
+      ctx.fillStyle = grd; ctx.fillRect(x * g, y * g, w * g, h * g);
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      for (let i = 0; i < 40; i++) {
+        ctx.fillRect(x * g + Math.random() * w * g, y * g + Math.random() * h * g, 6, 2);
+      }
+    });
+    // corridors
+    ctx.fillStyle = '#48443f';
+    ctx.fillRect(15 * g, 8 * g, 1 * g, 1 * g);
+    ctx.fillRect(13 * g, 11 * g, 3 * g, 1 * g);
+    ctx.fillRect(24 * g, 9 * g, 1 * g, 1 * g);
+    // grid
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1;
+    for (let x = 0; x <= W; x += g) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); ctx.stroke(); }
+    for (let y = 0; y <= H; y += g) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke(); }
+    // fog over unexplored east room
+    ctx.fillStyle = 'rgba(8,8,10,0.92)'; ctx.fillRect(24 * g, 4 * g, 5 * g, 10 * g);
+    ctx.fillRect(24 * g, 9 * g, 1 * g, 1 * g);
+    // door
+    ctx.fillStyle = '#7a5a2c'; ctx.fillRect(15 * g, 8 * g + 12, 6, g - 24);
+    // torch light on floor
+    const tl = ctx.createRadialGradient(9 * g, 7 * g, 10, 9 * g, 7 * g, 4.5 * g);
+    tl.addColorStop(0, 'rgba(255,180,80,0.28)'); tl.addColorStop(1, 'rgba(255,180,80,0)');
+    ctx.fillStyle = tl; ctx.fillRect(3 * g, 3 * g, 12 * g, 8 * g);
+    // tokens
+    const tokens = [
+      ['B', 8, 7, '#4e7a4a'], ['W', 10, 8, '#3f6f9a'], ['I', 7, 8, '#a8771c'], ['AW', 18, 8, '#8a4a4a'],
+    ];
+    tokens.forEach(([t, x, y, c]) => {
+      const cx = (x + 0.5) * g, cy = (y + 0.5) * g;
+      ctx.beginPath(); ctx.arc(cx, cy, g * 0.44, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#e8dcc2'; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = '600 15px "IBM Plex Sans", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, cx, cy + 1);
+    });
+    // 15 ft cone template at true scale (idea 3 v2)
+    ctx.save();
+    ctx.translate(10.5 * g, 8.5 * g);
+    ctx.rotate(-0.35);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(3 * g, -1.5 * g); ctx.lineTo(3 * g, 1.5 * g); ctx.closePath();
+    ctx.fillStyle = 'rgba(217,180,90,0.22)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(217,180,90,0.8)'; ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(217,180,90,0.9)'; ctx.font = '500 12px "IBM Plex Mono", monospace'; ctx.textAlign = 'left';
+    ctx.fillText('15 ft cone', 13.6 * g, 6.9 * g);
+  }
+
+  // ---- controls ----
+  function nextTurn() {
+    state.turn = (state.turn + 1) % state.order.length;
+    if (state.turn === 0) {
+      state.round++;
+      state.conds.forEach(k => k.rounds--);
+      state.conds = state.conds.filter(k => k.rounds > 0);
+    }
+    if (state.order[state.turn].hidden) say('turn: Ambusher (hidden, TV shows nothing)');
+    else say('turn.start ' + state.order[state.turn].name);
+    renderTable(); renderTV();
+  }
+  function damage() {
+    const c = state.order[state.turn];
+    c.hp = Math.max(0, c.hp - 7);
+    say('hp.change ' + c.name + ' −7 (private)');
+    if (c.note.startsWith('Concentrating')) say('prompt: Con save DC 10 to hold Bless');
+    renderTable();
+  }
+  function addCond() {
+    const c = state.order[state.turn];
+    state.conds.unshift({ who: c.name, what: 'Frightened', rounds: 3, c: '#e0574f' });
+    say('condition.add ' + c.name + ' Frightened 3 rd');
+    renderTV();
+  }
+  document.getElementById('btnNext').onclick = nextTurn;
+  document.getElementById('btnDamage').onclick = damage;
+  document.getElementById('btnCond').onclick = addCond;
+  document.getElementById('btnDim').onclick = () => { state.dim = !state.dim; say('table.dim ' + state.dim); renderTV(); };
+  document.getElementById('btnReveal').onclick = () => { state.reveal = !state.reveal; say(state.reveal ? 'reveal.show alaric.png' : 'reveal.hide'); renderTV(); };
+  document.getElementById('btnBlank').onclick = () => { state.blank = !state.blank; say(state.blank ? 'table.blank' : 'table.restore'); renderTV(); };
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    const k = e.key.toLowerCase();
+    if (k === 'n') nextTurn();
+    else if (k === 'd') damage();
+    else if (k === 'c') addCond();
+    else if (k === 'm') document.getElementById('btnDim').click();
+    else if (k === 'r') document.getElementById('btnReveal').click();
+    else if (e.key === 'Escape') document.getElementById('btnBlank').click();
+  });
+
+  // ---- scenes & synthesized sound (idea 5) ----
+  let ac = null;
+  function audio() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; }
+  function sfx(kind) {
+    let ctx; try { ctx = audio(); } catch (e) { say('audio unavailable in this viewer'); return; }
+    const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    if (kind === 'thud') {
+      o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.35);
+      g.gain.setValueAtTime(0.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4); o.start(t); o.stop(t + 0.4);
+    } else {
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(880, t + 0.25);
+      g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.7); o.start(t); o.stop(t + 0.7);
+    }
+  }
+  document.querySelectorAll('[data-scene]').forEach(b => b.onclick = () => {
+    const s = b.dataset.scene;
+    if (s) tv.dataset.scene = s; else delete tv.dataset.scene;
+    document.getElementById('sceneTag').textContent = s ? 'Scene · ' + s : '';
+    say(s ? 'scene.load ' + s + ' (tint + ambient loop)' : 'scene.clear');
+  });
+  document.querySelectorAll('[data-sfx]').forEach(b => b.onclick = () => { sfx(b.dataset.sfx); say('sfx.play ' + b.dataset.sfx); });
+
+  // ---- rules card flash ----
+  const rules = {
+    Frightened: 'Disadvantage on ability checks and attack rolls while the source of fear is in line of sight. Cannot willingly move closer to the source.',
+    Grappled: 'Speed becomes 0 and cannot benefit from any bonus to speed. Ends if the grappler is incapacitated or you are moved out of reach.',
+  };
+  let ruleTimer = null;
+  const rulesCard = document.getElementById('rulesCard');
+  document.querySelectorAll('[data-rule]').forEach(b => b.onclick = () => {
+    const r = b.dataset.rule;
+    rulesCard.innerHTML = '<b>' + r + '</b>' + rules[r] + '<div class="bar"></div>';
+    rulesCard.classList.remove('show'); void rulesCard.offsetWidth; rulesCard.classList.add('show');
+    clearTimeout(ruleTimer); ruleTimer = setTimeout(() => rulesCard.classList.remove('show'), 15000);
+    say('rules.flash ' + r + ' 15 s');
+  });
+
+  // ---- public d20 ----
+  const dice = document.getElementById('dice');
+  let diceTimer = null;
+  document.getElementById('btnRoll').onclick = () => {
+    const n = 1 + Math.floor(Math.random() * 20);
+    dice.className = 'dice show' + (n === 20 ? ' crit' : n === 1 ? ' fumble' : '');
+    dice.innerHTML = n + '<small>' + (n === 20 ? 'NATURAL 20' : n === 1 ? 'NATURAL 1' : 'd20 · public') + '</small>';
+    if (n === 20) sfx('sting');
+    clearTimeout(diceTimer); diceTimer = setTimeout(() => dice.classList.remove('show'), 2500);
+    say('roll.public d20 = ' + n);
+  };
+
+  // ---- light radii at true scale (bonus idea) ----
+  let light = false;
+  function drawLight() {
+    const cv = document.getElementById('fx'), ctx = cv.getContext('2d'), g = 42.3;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (!light) return;
+    const cx = (7 + 0.5) * g, cy = (8 + 0.5) * g; // Sister Idony's torch
+    [[4, 'rgba(255,200,110,0.55)', 'bright 20 ft'], [8, 'rgba(255,200,110,0.3)', 'dim 40 ft']].forEach(([sq, col, lbl]) => {
+      ctx.beginPath(); ctx.arc(cx, cy, sq * g, 0, Math.PI * 2);
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = col; ctx.font = '500 12px "IBM Plex Mono", monospace'; ctx.textAlign = 'left';
+      ctx.fillText(lbl, cx + sq * g + 4, cy - 4);
+    });
+    ctx.beginPath(); ctx.arc((10 + 0.5) * g, (8 + 0.5) * g, 12 * g, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(120,160,220,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([2, 6]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(120,160,220,0.8)'; ctx.fillText('Wren darkvision 60 ft', (10.5 + 12) * g - 150, (8.5) * g + 16);
+  }
+  document.getElementById('btnLight').onclick = function () {
+    light = !light; this.setAttribute('aria-pressed', light); drawLight(); say('light.overlay ' + (light ? 'on' : 'off'));
+  };
+
+  // ---- shot clock on the active chip ----
+  let clockOn = false, clockLeft = 60;
+  document.getElementById('btnClock').onclick = function () {
+    clockOn = !clockOn; clockLeft = 60; this.setAttribute('aria-pressed', clockOn); renderTV(); say('clock ' + (clockOn ? 'on 60 s' : 'off'));
+  };
+  const _nextTurn = nextTurn;
+  nextTurn = function () { clockLeft = 60; _nextTurn(); };
+  document.getElementById('btnNext').onclick = nextTurn;
+  const _renderTV = renderTV;
+  renderTV = function () {
+    _renderTV();
+    if (!clockOn) return;
+    const a = hudTop.querySelector('.chip.active');
+    if (a) a.insertAdjacentHTML('beforeend', '<span class="clock' + (clockLeft <= 10 ? ' late' : '') + '">' + clockLeft + 's</span>');
+  };
+
+  // ---- session timer with break nag (idea 6 v0) ----
+  let sinceBreak = 0;
+  const timerEl = document.getElementById('timer');
+  document.getElementById('btnBreak').onclick = () => { sinceBreak = 0; timerEl.classList.remove('nag'); say('session.break'); };
+  setInterval(() => {
+    sinceBreak++;
+    const m = String(Math.floor(sinceBreak / 60)).padStart(2, '0'), s = String(sinceBreak % 60).padStart(2, '0');
+    timerEl.firstChild.textContent = m + ':' + s;
+    if (sinceBreak >= 20) timerEl.classList.add('nag');
+    if (clockOn && clockLeft > 0) { clockLeft--; const c = hudTop.querySelector('.clock'); if (c) { c.textContent = clockLeft + 's'; c.classList.toggle('late', clockLeft <= 10); } }
+  }, 1000);
+
+  drawMap(); renderTable(); renderTV();
+  say('table.ready · BroadcastChannel("table") · 2 windows');
+})();
+</script>
+</body>
+</html>
